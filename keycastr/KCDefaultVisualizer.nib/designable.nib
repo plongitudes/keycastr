@@ -301,7 +301,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="kcF-nt-Lbl">
-                    <rect key="frame" x="230" y="53" width="134" height="16"/>
+                    <rect key="frame" x="218" y="22" width="69" height="16"/>
                     <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="right" title="System Font" id="kcF-nt-LCl">
                         <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -325,11 +325,23 @@
                         <action selector="chooseFont:" target="-2" id="kcF-nt-Act"/>
                     </connections>
                 </button>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kcA-ln-Chk">
+                    <rect key="frame" x="267" y="52" width="95" height="18"/>
+                    <buttonCell key="cell" type="check" title="Align Right" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="kcA-ln-CCl">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="9" name="value" keyPath="values.default.alignRight" id="kcA-ln-Bnd"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
-                <constraint firstItem="kcF-nt-Lbl" firstAttribute="trailing" secondItem="24" secondAttribute="trailing" id="kcF-c1-001"/>
-                <constraint firstItem="kcF-nt-Lbl" firstAttribute="centerY" secondItem="8" secondAttribute="centerY" id="kcF-c1-002"/>
-                <constraint firstItem="kcF-nt-Lbl" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="8" secondAttribute="trailing" constant="12" id="kcF-c1-003"/>
+                <constraint firstItem="kcF-nt-Btn" firstAttribute="leading" secondItem="kcF-nt-Lbl" secondAttribute="trailing" constant="6" id="kcF-c1-001"/>
+                <constraint firstItem="kcF-nt-Lbl" firstAttribute="centerY" secondItem="kcF-nt-Btn" secondAttribute="centerY" id="kcF-c1-002"/>
+                <constraint firstItem="kcF-nt-Lbl" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="13" secondAttribute="trailing" constant="8" id="kcF-c1-003"/>
+                <constraint firstItem="kcA-ln-Chk" firstAttribute="trailing" secondItem="24" secondAttribute="trailing" id="kcA-c1-001"/>
+                <constraint firstItem="kcA-ln-Chk" firstAttribute="centerY" secondItem="8" secondAttribute="centerY" id="kcA-c1-002"/>
                 <constraint firstItem="kcF-nt-Btn" firstAttribute="trailing" secondItem="24" secondAttribute="trailing" id="kcF-c1-004"/>
                 <constraint firstItem="kcF-nt-Btn" firstAttribute="centerY" secondItem="13" secondAttribute="centerY" id="kcF-c1-005"/>
                 <constraint firstItem="13" firstAttribute="width" secondItem="8" secondAttribute="width" id="0J1-VP-ec6"/>

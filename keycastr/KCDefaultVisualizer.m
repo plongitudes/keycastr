@@ -212,6 +212,7 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
               @"default.fadeDelay": @2.0,
               @"default.fadeDuration": @0.2,
               @"default.fontSize": @16.0,
+              @"default.alignRight": @NO,
               @"default.keystrokeDelay": @0.5,
               @"default.bezelColor": [NSKeyedArchiver archivedDataWithRootObject:[NSColor colorWithCalibratedWhite:0 alpha:0.8]
                                                            requiringSecureCoding:NO
@@ -557,9 +558,12 @@ static const int kKCBezelBorder = 6;
 {
 	NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
 	NSColor* c = [ud colorForKey:@"default.textColor"];
+	NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+	paragraphStyle.alignment = [ud boolForKey:@"default.alignRight"] ? NSTextAlignmentRight : NSTextAlignmentLeft;
 	return [NSDictionary dictionaryWithObjectsAndKeys:
 		KC_bezelFont(), NSFontAttributeName,
 		[c colorWithAlphaComponent:_opacity * [c alphaComponent]], NSForegroundColorAttributeName,
+		paragraphStyle, NSParagraphStyleAttributeName,
 		nil];
 }
 
@@ -579,7 +583,9 @@ static const int kKCBezelBorder = 6;
 	[[_backgroundColor colorWithAlphaComponent:_opacity * [_backgroundColor alphaComponent]] setFill];
 	[bgPath fill];
 
-	[_layoutManager drawGlyphsForGlyphRange:NSMakeRange(0,[_textStorage length]) atPoint:NSMakePoint(kKCBezelBorder, kKCBezelBorder)];
+	// Right-aligned text lays out at the container's right edge; shift it back into the bezel.
+	CGFloat textX = [_layoutManager usedRectForTextContainer:_textContainer].origin.x;
+	[_layoutManager drawGlyphsForGlyphRange:NSMakeRange(0,[_textStorage length]) atPoint:NSMakePoint(kKCBezelBorder - textX, kKCBezelBorder)];
 }
 
 -(void) maybeResize
@@ -589,6 +595,11 @@ static const int kKCBezelBorder = 6;
 	NSSize size = [_layoutManager usedRectForTextContainer:_textContainer].size;
 	size.width += kKCBezelBorder * 2;
 	size.height += kKCBezelBorder * 2;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"default.alignRight"])
+	{
+		// Pin to the window's right edge so new keys land there and the bezel grows leftward.
+		[self setFrameOrigin:NSMakePoint(_maxWidth - size.width, frame.origin.y)];
+	}
 	if (frame.size.width != size.width || frame.size.height != size.height)
 	{
 		[self setFrameSize:size];
