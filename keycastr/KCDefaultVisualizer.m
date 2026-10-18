@@ -37,6 +37,16 @@
 #import "NSUserDefaults+Utility.h"
 
 
+// The bezel font: default.fontName at default.fontSize, or the system font when no name
+// is set or the named font isn't installed.
+static NSFont *KC_bezelFont(void) {
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    CGFloat size = [ud floatForKey:@"default.fontSize"];
+    NSString *name = [ud stringForKey:@"default.fontName"];
+    NSFont *font = name.length ? [NSFont fontWithName:name size:size] : nil;
+    return font ?: [NSFont systemFontOfSize:size];
+}
+
 // TODO: seems this should be based on the font height, or shouldn't be needed at all
 static const CGFloat kKCDefaultBezelHeight = 32.0;
 static const CGFloat kKCDefaultBezelPadding = 10.0;
@@ -129,6 +139,23 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
     [userDefaults setBool:(mode == KCDefaultVisualizerDisplayOptionCommandKeysOnly) forKey:@"default.commandKeysOnly"];
     [userDefaults setBool:(mode == KCDefaultVisualizerDisplayOptionAllModifiedKeys) forKey:@"default.allModifiedKeys"];
     [userDefaults setBool:(mode == KCDefaultVisualizerDisplayOptionAllKeys) forKey:@"default.allKeys"];
+}
+
+- (IBAction)chooseFont:(id)sender
+{
+    NSFontManager *fontManager = [NSFontManager sharedFontManager];
+    [fontManager setTarget:self];
+    [fontManager setSelectedFont:KC_bezelFont() isMultiple:NO];
+    [fontManager orderFrontFontPanel:sender];
+}
+
+// Sent by the font panel while it targets us (see -chooseFont:).
+- (void)changeFont:(NSFontManager *)sender
+{
+    NSFont *font = [sender convertFont:KC_bezelFont()];
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    [userDefaults setObject:font.fontName forKey:@"default.fontName"];
+    [userDefaults setFloat:font.pointSize forKey:@"default.fontSize"];
 }
 
 -(void) showVisualizer:(id)sender
@@ -531,7 +558,7 @@ static const int kKCBezelBorder = 6;
 	NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
 	NSColor* c = [ud colorForKey:@"default.textColor"];
 	return [NSDictionary dictionaryWithObjectsAndKeys:
-		[NSFont systemFontOfSize:[ud floatForKey:@"default.fontSize"]], NSFontAttributeName,
+		KC_bezelFont(), NSFontAttributeName,
 		[c colorWithAlphaComponent:_opacity * [c alphaComponent]], NSForegroundColorAttributeName,
 		nil];
 }

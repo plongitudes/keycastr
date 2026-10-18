@@ -300,8 +300,38 @@
                         <binding destination="9" name="value" keyPath="values.default_displayModifiedCharacters" id="sXZ-s3-9aV"/>
                     </connections>
                 </button>
+                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="kcF-nt-Lbl">
+                    <rect key="frame" x="230" y="53" width="134" height="16"/>
+                    <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="right" title="System Font" id="kcF-nt-LCl">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                    <connections>
+                        <binding destination="9" name="value" keyPath="values.default.fontName" id="kcF-nt-Bnd">
+                            <dictionary key="options">
+                                <string key="NSNullPlaceholder">System Font</string>
+                            </dictionary>
+                        </binding>
+                    </connections>
+                </textField>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kcF-nt-Btn">
+                    <rect key="frame" x="285" y="12" width="84" height="32"/>
+                    <buttonCell key="cell" type="push" title="Font…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="kcF-nt-BCl">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="chooseFont:" target="-2" id="kcF-nt-Act"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
+                <constraint firstItem="kcF-nt-Lbl" firstAttribute="trailing" secondItem="24" secondAttribute="trailing" id="kcF-c1-001"/>
+                <constraint firstItem="kcF-nt-Lbl" firstAttribute="centerY" secondItem="8" secondAttribute="centerY" id="kcF-c1-002"/>
+                <constraint firstItem="kcF-nt-Lbl" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="8" secondAttribute="trailing" constant="12" id="kcF-c1-003"/>
+                <constraint firstItem="kcF-nt-Btn" firstAttribute="trailing" secondItem="24" secondAttribute="trailing" id="kcF-c1-004"/>
+                <constraint firstItem="kcF-nt-Btn" firstAttribute="centerY" secondItem="13" secondAttribute="centerY" id="kcF-c1-005"/>
                 <constraint firstItem="13" firstAttribute="width" secondItem="8" secondAttribute="width" id="0J1-VP-ec6"/>
                 <constraint firstItem="13" firstAttribute="centerY" secondItem="14" secondAttribute="centerY" id="0Tb-r1-UIH"/>
                 <constraint firstItem="14" firstAttribute="top" secondItem="2" secondAttribute="bottom" constant="13" id="1J0-wQ-74V"/>

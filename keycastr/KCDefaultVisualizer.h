@@ -108,6 +108,7 @@ typedef NS_ENUM(NSInteger, KCDefaultVisualizerDisplayOption) {
 @property (nonatomic, assign) KCDefaultVisualizerDisplayOption displayMode;
 
 - (IBAction)preferencesViewDidSelectDisplayOption:(id)sender;
+- (IBAction)chooseFont:(id)sender;
 
 - (BOOL)shouldOnlyDisplayCommandKeys;
 - (BOOL)shouldOnlyDisplayModifiedKeys;
