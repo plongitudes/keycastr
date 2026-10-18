@@ -31,6 +31,8 @@
 #endif
 
 #import <Quartz/Quartz.h>
+#import <netinet/in.h>
+#import <sys/socket.h>
 #import <ShortcutRecorder/ShortcutRecorder.h>
 #import "KCAppController.h"
 #import "KCEventTap.h"
@@ -50,6 +52,7 @@ static NSString* kKCPrefCapturingHotKey = @"capturingHotKey";
 static NSString* kKCPrefVisibleAtLaunch = @"alwaysShowPrefs";
 static NSString* kKCPrefDisplayIcon = @"displayIcon";
 static NSString* kKCPrefSelectedVisualizer = @"selectedVisualizer";
+static NSString* kKCPrefRemotePausePort = @"remotePausePort";
 static NSString* kKCSupplementalAlertText = @"\n\nPlease grant KeyCastr access to the Accessibility and/or Input Monitoring API in order to broadcast your keyboard inputs.\n\nWithin the System Preferences application, open the Security & Privacy preferences and add KeyCastr to the Accessibility and/or Input Monitoring list within the Privacy tab. If KeyCastr is already listed under the menus, please remove it and try again.\n";
 
 static NSInteger kKCPrefDisplayIconInMenuBar = 0x01;
@@ -81,6 +84,8 @@ static NSInteger kKCPrefDisplayIconInDock = 0x02;
 
 @implementation KCAppController {
     BOOL _isCapturing;
+    BOOL _isPaused;
+    dispatch_source_t _remotePauseSource;
 }
 
 @synthesize eventTap, statusItem, statusMenu, aboutWindow, aboutQCView, preferencesWindow, prefsWindowController, shortcutRecorder, dockShortcutItem, statusShortcutItem, mouseEventVisualizer, currentVisualizer;
@@ -140,6 +145,7 @@ static NSInteger kKCPrefDisplayIconInDock = 0x02;
     }
 
     [self setIsCapturing:YES];
+    [self startRemotePauseListener];
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:kKCPrefVisibleAtLaunch]) {
         [preferencesWindow center];
@@ -149,6 +155,59 @@ static NSInteger kKCPrefDisplayIconInDock = 0x02;
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
     [eventTap removeTap];
+}
+
+// Lets another app (e.g. an editor entering insert mode) pause and resume key display
+// by sending "hide" or "show" as a UDP datagram to 127.0.0.1:<remotePausePort>.
+// UDP so the sender needs no process spawn and the pause lands before the next key.
+// Off unless remotePausePort is set.
+- (void)startRemotePauseListener {
+    NSInteger port = [[NSUserDefaults standardUserDefaults] integerForKey:kKCPrefRemotePausePort];
+    if (port <= 0 || port > 65535) {
+        return;
+    }
+
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) {
+        NSLog(@"Remote pause: socket() failed: %s", strerror(errno));
+        return;
+    }
+
+    struct sockaddr_in addr = {0};
+    addr.sin_len = sizeof(addr);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((uint16_t)port);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        NSLog(@"Remote pause: bind to 127.0.0.1:%ld failed: %s", (long)port, strerror(errno));
+        close(fd);
+        return;
+    }
+
+    _remotePauseSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue());
+    __weak typeof(self) weakSelf = self;
+    dispatch_source_set_event_handler(_remotePauseSource, ^{
+        char buf[64];
+        ssize_t n = recv(fd, buf, sizeof(buf), 0);
+        if (n <= 0) {
+            return;
+        }
+        NSString *message = [[[NSString alloc] initWithBytes:buf length:n encoding:NSUTF8StringEncoding]
+                             stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+        [weakSelf noteRemotePauseMessage:message];
+    });
+    dispatch_source_set_cancel_handler(_remotePauseSource, ^{
+        close(fd);
+    });
+    dispatch_resume(_remotePauseSource);
+}
+
+- (void)noteRemotePauseMessage:(NSString *)message {
+    if ([message isEqualToString:@"hide"]) {
+        _isPaused = YES;
+    } else if ([message isEqualToString:@"show"]) {
+        _isPaused = NO;
+    }
 }
 
 - (void)activeApplicationDidChange:(NSNotification *)notification {
@@ -236,6 +295,7 @@ static NSInteger kKCPrefDisplayIconInDock = 0x02;
     NSDictionary *appDefaults = @{ kKCPrefDisplayIcon: @3,
                                    kKCPrefSelectedVisualizer: @"Default",
                                    kKCPrefVisibleAtLaunch: @YES,
+                                   kKCPrefRemotePausePort: @0,
                                    kKCPrefCapturingHotKey: [NSData dataWithBytes:&keyCombo length:sizeof(keyCombo)] };
     
     NSArray *factories = [KCVisualizer availableVisualizerFactories];
@@ -259,7 +319,7 @@ static NSInteger kKCPrefDisplayIconInDock = 0x02;
 		return;
 	}
 	
-    if (!_isCapturing) {
+    if (!_isCapturing || _isPaused) {
 		return;
     }
 
@@ -277,7 +337,7 @@ static NSInteger kKCPrefDisplayIconInDock = 0x02;
 
 - (void)eventTap:(KCEventTap *)tap noteFlagsChanged:(NSEventModifierFlags)flags
 {
-    if (!_isCapturing) {
+    if (!_isCapturing || _isPaused) {
         return;
     }
     
