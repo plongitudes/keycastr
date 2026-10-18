@@ -79,6 +79,7 @@
 - (void)addKeystroke:(KCKeystroke *)keystroke;
 - (void)addMouseEvent:(KCMouseEvent *)mouseEvent;
 - (void)addRunningAnimation:(KCBezelAnimation *)animation;
+- (void)setAdjustingBounds:(BOOL)adjusting;
 
 - (instancetype)init;
 
@@ -109,6 +110,7 @@ typedef NS_ENUM(NSInteger, KCDefaultVisualizerDisplayOption) {
 
 - (IBAction)preferencesViewDidSelectDisplayOption:(id)sender;
 - (IBAction)chooseFont:(id)sender;
+- (IBAction)adjustBounds:(id)sender;
 
 - (BOOL)shouldOnlyDisplayCommandKeys;
 - (BOOL)shouldOnlyDisplayModifiedKeys;

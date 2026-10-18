@@ -158,6 +158,11 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
     [userDefaults setFloat:font.pointSize forKey:@"default.fontSize"];
 }
 
+- (IBAction)adjustBounds:(NSButton *)sender
+{
+    [visualizerWindow setAdjustingBounds:(sender.state == NSControlStateValueOn)];
+}
+
 -(void) showVisualizer:(id)sender
 {
 	[visualizerWindow orderFront:self];
@@ -213,6 +218,7 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
               @"default.fadeDuration": @0.2,
               @"default.fontSize": @16.0,
               @"default.alignRight": @NO,
+              @"default.customBounds": @NO,
               @"default.keystrokeDelay": @0.5,
               @"default.bezelColor": [NSKeyedArchiver archivedDataWithRootObject:[NSColor colorWithCalibratedWhite:0 alpha:0.8]
                                                            requiringSecureCoding:NO
@@ -296,6 +302,11 @@ static NSRect KC_defaultFrame(void) {
         optimalWidth = fabs(NSMaxX(screenRect) - NSMinX(self.frame)) - kKCDefaultBezelPadding;
     }
 
+    // Once the user has set bounds, keep their width, only clipping it at the screen edge.
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"default.customBounds"]) {
+        optimalWidth = fmin(NSWidth(self.frame), optimalWidth);
+    }
+
     CGFloat height;
     if (keepHeight) {
         height = fmaxf(kKCDefaultBezelHeight, NSHeight(self.frame));
@@ -305,6 +316,31 @@ static NSRect KC_defaultFrame(void) {
 
     NSRect frame = NSMakeRect(NSMinX(self.frame), NSMinY(self.frame), optimalWidth, height);
 	[self setFrame:frame display:NO];
+}
+
+// While adjusting, the window shows its extent and can be resized by its edges;
+// its width sets where bezels wrap (left and right bounds), and dragging still moves it.
+- (void)setAdjustingBounds:(BOOL)adjusting {
+    NSView *contentView = self.contentView;
+    contentView.wantsLayer = YES;
+    if (adjusting) {
+        self.styleMask |= NSWindowStyleMaskResizable;
+        self.minSize = NSMakeSize(100, NSHeight(self.frame));
+        self.maxSize = NSMakeSize(CGFLOAT_MAX, NSHeight(self.frame));
+        contentView.layer.backgroundColor = [NSColor.systemBlueColor colorWithAlphaComponent:0.25].CGColor;
+        contentView.layer.borderColor = NSColor.systemBlueColor.CGColor;
+        contentView.layer.borderWidth = 2;
+        [self orderFront:self];
+    } else {
+        self.styleMask &= ~NSWindowStyleMaskResizable;
+        self.minSize = NSZeroSize;
+        self.maxSize = NSMakeSize(CGFLOAT_MAX, CGFLOAT_MAX);
+        contentView.layer.backgroundColor = nil;
+        contentView.layer.borderWidth = 0;
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"default.customBounds"];
+        [self resizePreservingHeight:YES];
+        [self saveFrameUsingName:self.frameAutosaveName];
+    }
 }
 
 - (void)resetFrame {
